@@ -1,4 +1,8 @@
-"scripts": {
-  "start": "node index.js",
-  "deploy": "node deploy-commands.js"
+{
+  "name": "airbusrbxbot",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js"
+  }
 }
