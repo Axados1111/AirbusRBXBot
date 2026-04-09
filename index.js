@@ -39,3 +39,18 @@ client.on('interactionCreate', async interaction => {
 
 // LOGIN
 client.login(process.env.TOKEN);
+
+client.on("guildMemberAdd", async (member) => {
+    const CHANNEL_ID = "YOUR_CHANNEL_ID";
+    const ROLE_ID = "YOUR_ROLE_ID";
+
+    const channel = member.guild.channels.cache.get(CHANNEL_ID);
+    if (channel) {
+        channel.send(`Welcome to the server, ${member}! 🎉`);
+    }
+
+    const role = member.guild.roles.cache.get(ROLE_ID);
+    if (role) {
+        member.roles.add(role).catch(console.error);
+    }
+});
