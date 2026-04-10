@@ -5,7 +5,7 @@ require('dotenv').config();
 
 const commands = [];
 const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
 
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
@@ -16,7 +16,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
 (async () => {
   try {
-    console.log('🔄 Deploying slash commands...');
+    console.log('🔄 Deploying commands...');
 
     await rest.put(
       Routes.applicationGuildCommands(
@@ -26,7 +26,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
       { body: commands }
     );
 
-    console.log('✅ Slash commands deployed!');
+    console.log('✅ Commands deployed!');
   } catch (err) {
     console.error(err);
   }
