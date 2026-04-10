@@ -1,46 +1,57 @@
-const { Client, GatewayIntentBits, Events } = require('discord.js');
-
-console.log("🟡 Bot file loaded...");
+const fs = require('fs');
+const path = require('path');
+const { Client, Collection, GatewayIntentBits, Events } = require('discord.js');
+require('dotenv').config();
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers
-  ]
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
 });
 
-client.once(Events.ClientReady, (c) => {
-  console.log(`✅ Logged in as ${c.user.tag}`);
+client.commands = new Collection();
+
+// Load commands safely
+const commandsPath = path.join(__dirname, 'commands');
+
+if (fs.existsSync(commandsPath)) {
+  const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
+
+  for (const file of commandFiles) {
+    const command = require(`./commands/${file}`);
+    client.commands.set(command.data.name, command);
+  }
+}
+
+client.once(Events.ClientReady, () => {
+  console.log(`Logged in as ${client.user.tag}`);
 });
 
-client.on('error', console.error);
-process.on('uncaughtException', console.error);
-process.on('unhandledRejection', console.error);
+client.on(Events.InteractionCreate, async interaction => {
+  if (!interaction.isChatInputCommand()) return;
 
-client.on('guildMemberAdd', async (member) => {
-  console.log("👤 Member join detected");
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
 
   try {
-    const roleId = process.env.ROLE_ID;
-
-    console.log("ROLE_ID =", roleId);
-
-    if (!roleId) {
-      console.log("❌ ROLE_ID missing in Railway variables");
-      return;
+    await command.execute(interaction);
+  } catch (err) {
+    console.error(err);
+    if (!interaction.replied) {
+      await interaction.reply({ content: 'Error running command', ephemeral: true });
     }
+  }
+});
+
+client.on(Events.GuildMemberAdd, async member => {
+  try {
+    const roleId = process.env.ROLE_ID;
+    if (!roleId) return;
 
     const role = member.guild.roles.cache.get(roleId);
-
-    if (!role) {
-      console.log("❌ Role not found in server");
-      return;
-    }
+    if (!role) return;
 
     await member.roles.add(role);
-    console.log(`✅ Role given to ${member.user.tag}`);
   } catch (err) {
-    console.error("❌ Auto-role crash:", err);
+    console.error(err);
   }
 });
 
