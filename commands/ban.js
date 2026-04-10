@@ -1,31 +1,14 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
-export default {
+module.exports = {
   data: new SlashCommandBuilder()
     .setName('ban')
     .setDescription('Ban a user')
-    .addUserOption(option =>
-      option.setName('user')
-        .setDescription('User to ban')
-        .setRequired(true)
-    )
+    .addUserOption(o => o.setName('user').setDescription('User').setRequired(true))
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
 
   async execute(interaction) {
-    const member = interaction.options.getMember('user');
-
-    if (!member) {
-      return interaction.reply({ content: 'User not found in this server.', ephemeral: true });
-    }
-
-    if (!member.bannable) {
-      return interaction.reply({
-        content: 'I cannot ban this user. Check role hierarchy or permissions.',
-        ephemeral: true
-      });
-    }
-
-    await member.ban();
-    await interaction.reply(`🔨 Banned ${member.user.tag}`);
+    const user = interaction.options.getUser('user');
+    await interaction.reply(`${user.tag} would be banned (logic not added yet)`);
   }
 };
