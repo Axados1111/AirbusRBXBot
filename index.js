@@ -1,56 +1,51 @@
-import 'dotenv/config';
-import { Client, GatewayIntentBits, REST, Routes, Collection } from 'discord.js';
-import fs from 'fs';
+const fs = require('fs');
+const path = require('path');
+const { Client, Collection, GatewayIntentBits, Events } = require('discord.js');
+require('dotenv').config();
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds
+  ]
+});
+
 client.commands = new Collection();
 
-client.once('ready', async () => {
-    console.log(`Logged in as ${client.user.tag}`);
+// Load commands
+const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
-    // 🔥 LOAD COMMANDS
-    const commandFiles = fs.readdirSync('./commands').filter(f => f.endsWith('.js'));
-    for (const file of commandFiles) {
-        const command = await import(`./commands/${file}`);
-        client.commands.set(command.default.data.name, command.default);
-    }
+for (const file of commandFiles) {
+  const filePath = path.join(commandsPath, file);
+  const command = require(filePath);
+  client.commands.set(command.data.name, command);
+}
 
-    // 🔥 DEPLOY COMMANDS (PUT IT HERE)
-    const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-    const commands = client.commands.map(cmd => cmd.data.toJSON());
-
-    await rest.put(
-        Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-        { body: commands }
-    );
-
-    console.log('✅ Commands deployed');
+// When bot is ready
+client.once(Events.ClientReady, () => {
+  console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
-// 🔥 HANDLE COMMANDS
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand()) return;
+// Interaction handler
+client.on(Events.InteractionCreate, async interaction => {
+  if (!interaction.isChatInputCommand()) return;
 
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
+  const command = client.commands.get(interaction.commandName);
 
+  if (!command) return;
+
+  try {
     await command.execute(interaction);
+  } catch (error) {
+    console.error(error);
+
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply('❌ Error executing command.');
+    } else {
+      await interaction.reply({ content: '❌ Error executing command.', ephemeral: true });
+    }
+  }
 });
 
-// LOGIN
+// Login
 client.login(process.env.TOKEN);
-
-client.on("guildMemberAdd", async (member) => {
-    const CHANNEL_ID = "YOUR_CHANNEL_ID";
-    const ROLE_ID = "YOUR_ROLE_ID";
-
-    const channel = member.guild.channels.cache.get(CHANNEL_ID);
-    if (channel) {
-        channel.send(`Welcome to the server, ${member}! 🎉`);
-    }
-
-    const role = member.guild.roles.cache.get(ROLE_ID);
-    if (role) {
-        member.roles.add(role).catch(console.error);
-    }
-});
