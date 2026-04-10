@@ -1,26 +1,46 @@
 const { Client, GatewayIntentBits, Events } = require('discord.js');
-require('dotenv').config();
+
+console.log("🟡 Bot file loaded...");
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers
+  ]
 });
 
-client.once(Events.ClientReady, () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
+client.once(Events.ClientReady, (c) => {
+  console.log(`✅ Logged in as ${c.user.tag}`);
 });
 
-client.on(Events.GuildMemberAdd, async (member) => {
+client.on('error', console.error);
+process.on('uncaughtException', console.error);
+process.on('unhandledRejection', console.error);
+
+client.on('guildMemberAdd', async (member) => {
+  console.log("👤 Member join detected");
+
   try {
     const roleId = process.env.ROLE_ID;
-    if (!roleId) return;
+
+    console.log("ROLE_ID =", roleId);
+
+    if (!roleId) {
+      console.log("❌ ROLE_ID missing in Railway variables");
+      return;
+    }
 
     const role = member.guild.roles.cache.get(roleId);
-    if (!role) return;
+
+    if (!role) {
+      console.log("❌ Role not found in server");
+      return;
+    }
 
     await member.roles.add(role);
-    console.log(`Gave role to ${member.user.tag}`);
+    console.log(`✅ Role given to ${member.user.tag}`);
   } catch (err) {
-    console.error("Auto-role error:", err);
+    console.error("❌ Auto-role crash:", err);
   }
 });
 
